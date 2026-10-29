@@ -29,39 +29,73 @@ export default function Home() {
   return (
     <Container maxWidth="lg">
       <Helmet>
-        <title>LeadMap - Busca de Leads Locais</title>
+        <title>LeadMap — Gerador de Leads e Busca de Empresas Locais por CEP</title>
+        <meta name="description" content="Encontre novos clientes e empresas na sua região por CEP e nicho comercial em tempo real. Exporte para Excel e CSV." />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "LeadMap",
+            "url": "https://leadmap.app",
+            "description": "Plataforma de busca e geração de leads locais para prospecção comercial B2B por CEP.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "All"
+          })}
+        </script>
       </Helmet>
       
-      <Box sx={{ textAlign: 'center', mt: 8, mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 800, color: 'primary.dark' }}>
+      <Box sx={{ textAlign: 'center', mt: { xs: 5, md: 7 }, mb: 4 }}>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 800, 
+            color: 'primary.dark',
+            fontSize: { xs: '2rem', sm: '2.8rem', md: '3.4rem' },
+            lineHeight: 1.15,
+            letterSpacing: '-0.02em'
+          }}
+        >
           Encontre novos clientes <br />na sua região
         </Typography>
-        <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto', mt: 2 }}>
-          Gere leads qualificados buscando por empresas, segmento e raio de proximidade em tempo real.
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: 'text.secondary', 
+            maxWidth: 620, 
+            mx: 'auto', 
+            mt: 2,
+            fontSize: { xs: '1rem', md: '1.15rem' },
+            fontWeight: 400
+          }}
+        >
+          Gere listas de leads qualificadas buscando por empresas, comércios e nichos em qualquer cidade do Brasil.
         </Typography>
       </Box>
 
+      {/* Formulário limpo sem slider de km */}
       <SearchForm onSearch={handleSearch} isLoading={loading} />
 
-      {/* AdBanner abaixo do formulário de busca */}
-      <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+      {/* Banner de Anúncio Discreto */}
+      <Box sx={{ maxWidth: 820, mx: 'auto', mt: 1 }}>
         <AdBanner />
       </Box>
 
       {error && (
-        <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
-          <Alert severity="error">{error}</Alert>
+        <Box sx={{ maxWidth: 820, mx: 'auto', mt: 4 }}>
+          <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>
         </Box>
       )}
 
       {results && results.leads && (
         <>
-          {/* Botões de exportação e a lista formatada */}
+          {/* Botões de exportação e Lista formatada */}
           <ExportButtons data={results.leads} />
           <ResultList leads={results.leads} />
           
-          {/* AdBanner abaixo de tudo, antes do rodapé */}
-          <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
+          {/* Banner inferior */}
+          <Box sx={{ maxWidth: 820, mx: 'auto', mt: 4 }}>
             <AdBanner />
           </Box>
         </>

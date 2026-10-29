@@ -1,25 +1,46 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 
 export const getCoordinatesFromCEP = async (cep: string) => {
     try {
-        // 1. Busca endereço no ViaCEP
-        const viaCepUrl = `https://viacep.com.br/ws/${cep.replace(/\D/g, '')}/json/`;
-        const { data: cepData } = await axios.get(viaCepUrl);
-        
-        if (cepData.erro) {
-            throw new Error('CEP não encontrado');
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length !== 8) {
+            throw new Error('CEP inválido. O CEP deve conter 8 dígitos.');
         }
 
-        // 2. Busca coordenadas no Nominatim (OpenStreetMap)
-        const address = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}, Brasil`;
-        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+        // 1. Busca endereço no ViaCEP
+        const viaCepUrl = `https://viacep.com.br/ws/${cleanCep}/json/`;
+        const { data: cepData } = await axios.get(viaCepUrl, { timeout: 7000 });
         
-        const { data: geoData } = await axios.get(nominatimUrl, {
-            headers: { 'User-Agent': 'LeadMapApp/1.0' }
-        });
+        if (cepData.erro) {
+            throw new Error('CEP não encontrado. Verifique o número digitado.');
+        }
+
+        // 2. Busca coordenadas no Nominatim em cascata (Rua -> Bairro -> Cidade)
+        const candidates = [
+            [cepData.logradouro, cepData.localidade, cepData.uf, 'Brasil'].filter(Boolean).join(', '),
+            [cepData.bairro, cepData.localidade, cepData.uf, 'Brasil'].filter(Boolean).join(', '),
+            [cepData.localidade, cepData.uf, 'Brasil'].filter(Boolean).join(', ')
+        ].filter(str => str.trim().length > 0);
+
+        let geoData: any[] = [];
+        for (const query of candidates) {
+            try {
+                const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+                const res = await axios.get(nominatimUrl, {
+                    headers: { 'User-Agent': 'LeadMapApp/1.0 (contact@leadmap.app)' },
+                    timeout: 5000
+                });
+                if (res.data && res.data.length > 0) {
+                    geoData = res.data;
+                    break;
+                }
+            } catch (err) {
+                // Continua para o próximo candidato
+            }
+        }
 
         if (!geoData || geoData.length === 0) {
-            throw new Error('Não foi possível encontrar as coordenadas para este CEP');
+            throw new Error('Não foi possível localizar as coordenadas no mapa para esta região.');
         }
 
         return {
@@ -27,8 +48,8 @@ export const getCoordinatesFromCEP = async (cep: string) => {
             lon: parseFloat(geoData[0].lon),
             addressInfo: cepData
         };
-    } catch (error) {
-        console.error('Erro no geocoding:', error);
+    } catch (error: any) {
+        console.error('Erro no geocoding:', error.message);
         throw error;
     }
 };
